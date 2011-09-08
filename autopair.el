@@ -181,6 +181,7 @@
 ;; requires
 (require 'cl-lib)
 (require 'paren)
+(require 'thingatpt)
 
 (defgroup autopair nil
   "Automagically pair braces and quotes"
@@ -522,23 +523,33 @@ A list of four elements is returned:
                                    pair-list))
                       (cl-remove-if-not #'listp autopair-extra-pairs)))))))
 
-(defun autopair--calculate-wrap-action ()
-  (when (and transient-mark-mode mark-active)
+(defun autopair--wrap-region-p (point region)
+  (and point region
+       (eq point (car region))
+       (or (not (eq autopair-autowrap 'help-balance))
+           (save-excursion
+             (let* ((start-syntax (syntax-ppss (car region)))
+                    (end-syntax   (syntax-ppss (cdr region))))
+               (and (eq (nth 0 start-syntax) (nth 0 end-syntax))
+                    (eq (nth 3 start-syntax) (nth 3 end-syntax))))))))
+
+(defun autopair--calculate-wrap-region ()
+  (cond
+   ((and transient-mark-mode mark-active)
     (when (> (point) (mark))
       (exchange-point-and-mark))
-    (save-excursion
-      (let* ((region-before (cons (region-beginning)
-                                  (region-end)))
-             (point-before (point))
-             (start-syntax (syntax-ppss (car region-before)))
-             (end-syntax   (syntax-ppss (cdr region-before))))
-        (when (or (not (eq autopair-autowrap 'help-balance))
-                  (and (eq (nth 0 start-syntax) (nth 0 end-syntax))
-                       (eq (nth 3 start-syntax) (nth 3 end-syntax))))
-          (list 'wrap (or (cl-second autopair-action)
-                          (autopair--pair-of autopair-inserted))
-                point-before
-                region-before))))))
+    (cons (region-beginning) (region-end)))
+   ((not (eq autopair-autowrap 'help-balance))
+    (bounds-of-thing-at-point autopair-autowrap))))
+
+(defun autopair--calculate-wrap-action ()
+  (let* ((region-before (autopair--calculate-wrap-region))
+         (point-before (point)))
+    (when (autopair--wrap-region-p point-before region-before)
+      (list 'wrap (or (cl-second autopair-action)
+                      (autopair--pair-of autopair-inserted))
+            point-before
+            region-before))))
 
 (defun autopair--original-binding (fallback-keys)
   (or (key-binding `[,autopair-inserted])
