@@ -420,7 +420,7 @@ syntax table and the local value of `autopair-extra-pairs'."
     (define-key map [remap delete-backward-char] 'autopair-backspace)
     (define-key map [remap backward-delete-char-untabify] 'autopair-backspace)
     (define-key map "\177" 'autopair-backspace)
-    (define-key map "\r" 'autopair-newline)
+    (define-key map [remap newline-and-indent] ' gautopair-newline)
     (dotimes (char 256) ;; only searches the first 256 chars,
       ;; TODO: is this enough/toomuch/stupid?
       (unless (member char
