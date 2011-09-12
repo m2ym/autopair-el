@@ -562,7 +562,8 @@ A list of four elements is returned:
          (beyond-cua (let ((cua--keymap-alist nil))
                        (autopair--original-binding fallback-keys)))
          (beyond-autopair (autopair--original-binding fallback-keys)))
-    (when autopair-autowrap
+    (when (and autopair-autowrap
+               (eq (car autopair-action) 'opening))
       (setq autopair-wrap-action (autopair--calculate-wrap-action)))
 
     (setq autopair--this-command this-command)
@@ -867,7 +868,6 @@ by this command. Then place point after the first, indented.\n\n"
 `autopair-wrap-action'. "
   (when (and autopair-wrap-action
              (cl-notany #'null autopair-wrap-action))
-
     (if autopair-handle-wrap-action-fns
         (condition-case err
             (mapc #'(lambda (fn)
